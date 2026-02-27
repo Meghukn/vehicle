@@ -1,11 +1,25 @@
+// config/db.js
+
 import mongoose from "mongoose";
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MOngo_URI);
-    console.log(`MongoDB connected ${conn.connection.host}`);
+    if (!process.env.MONGO_URI) {
+      throw new Error("MONGO_URI is not defined in environment variables");
+    }
+
+    const conn = await mongoose.connect(process.env.MONGO_URI, {
+      autoIndex: false, // Disable automatic index creation in production
+      serverSelectionTimeoutMS: 5000,
+    });
+
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`MongoDB Connected: ${conn.connection.host}`);
+    }
   } catch (error) {
-    console .error("Database connection failed", error.message);
+    console.error("Database connection failed:", error.message);
+
+    // Exit process if DB fails — critical in production
     process.exit(1);
   }
 };

@@ -1,58 +1,58 @@
-import { BrowserRouter as Router, Routes, Route} from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { useContext } from "react";
+
+import Navbar from "./components/Navbar";
+import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import Dashboard from "./pages/Dashboard";
-import Navbar from "./components/Navbar";
-import { useContext } from 'react';
+
 import { AuthContext } from "./context/AuthContext";
-import { Navigate } from 'react-router-dom';
 
 
-function ProtectedRoute({ children }) {
-  const { user } = useContext(AuthContext)
+// Protected Route Wrapper
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated, loading } = useContext(AuthContext);
 
-  if (!user) {
-    return <Navigate to="/" replace/>;
+  if (loading) {
+    return <div className="page-container">Loading...</div>;
   }
-  return children;
-}
 
-function App() {
-  const {user} = useContext(AuthContext)
+  return isAuthenticated ? children : <Navigate to="/login" />;
+};
 
+
+const App = () => {
   return (
     <Router>
-      {user && <Navbar/>}
-      <div style={{maxWidth: "1100px", margin: "40px auto", padding: "0 20px"}}>
-        <Routes>
-          <Route
-            path="/"
-            element={user ? <Navigate to="/dashboard" replace/> : <Login/>}
-          />
+      <Navbar />
 
-          <Route
-            path="/register"
-            element={user ? <Navigate to="/dashboard" replace/> : <Register/>}
-          />
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
 
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard/>
-              </ProtectedRoute>
-            }
-          />
+        <Route
+          path="/login"
+          element={<Login />}
+        />
 
-          <Route
-            path="*"
-            element={<Navigate to={user ? "/dashboard" : "/"}replace />}
-          />
-
-        </Routes>
-      </div>
+        <Route
+          path="/register"
+          element={<Register />}
+        />
+        
+        <Route
+          path="*"
+          element={<Navigate to="/" />}
+        />
+      </Routes>
     </Router>
-  )
-}
+  );
+};
 
-export default App
+export default App;

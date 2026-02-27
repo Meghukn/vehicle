@@ -1,79 +1,137 @@
 import { useState } from "react";
-import API from "../services/api";
+import api from "../services/api";
 
-
-function VehicleForm ({ onVehicleAdded }) {
-  const [form, setForm] = useState({
+const VehicleForm = ({
+  type = "vehicle",
+  vehicleId,
+  onVehicleAdded,
+  onBatteryAdded,
+}) => {
+  const [formData, setFormData] = useState({
     brand: "",
     model: "",
     year: "",
-    color: ""
+    color: "",
+    level: "",
   });
 
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
   const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
 
     try {
-      const {data} = await API.post("/vehicles", form);
+      if (type === "vehicle") {
+        const res = await api.post("/vehicles", {
+          brand: formData.brand,
+          model: formData.model,
+          year: Number(formData.year),
+          color: formData.color,
+        });
 
-      onVehicleAdded(data);
+        onVehicleAdded(res.data);
+      } else {
+        const res = await api.post(
+          `/vehicles/${vehicleId}/battery`,
+          {
+            level: Number(formData.level),
+          }
+        );
 
-      setForm({
+        onBatteryAdded(res.data.batteryHistory);
+      }
+
+      setFormData({
         brand: "",
         model: "",
         year: "",
-        color: ""
+        color: "",
+        level: "",
       });
-
-    }catch(error) {
-      alert(error.response?.data?.message || "Error adding vehicle")
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Something went wrong"
+      );
     }
+
+    setLoading(false);
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h3>Add Vehicle</h3>
+    <form className="form-card" onSubmit={handleSubmit}>
+      {error && (
+        <div className="error-box">{error}</div>
+      )}
 
-      <input
-        name = "brand"
-        placeholder="Brand"
-        value={form.brand}
-        onChange={handleChange}
-      />
+      {type === "vehicle" ? (
+        <>
+          <input
+            type="text"
+            name="brand"
+            placeholder="Brand"
+            value={formData.brand}
+            onChange={handleChange}
+            required
+          />
 
-      <input
-        name = "model"
-        placeholder="Model"
-        value={form.model}
-        onChange={handleChange}
-      />
+          <input
+            type="text"
+            name="model"
+            placeholder="Model"
+            value={formData.model}
+            onChange={handleChange}
+            required
+          />
 
-      <input
-        name = "year"
-        type="number"
-        placeholder="Year"
-        value={form.year}
-        onChange={handleChange}
-      />
+          <input
+            type="number"
+            name="year"
+            placeholder="Year"
+            value={formData.year}
+            onChange={handleChange}
+            required
+          />
 
-      <input
-        name = "color"
-        placeholder="Color"
-        value={form.color}
-        onChange={handleChange}
-      />
+          <input
+            type="text"
+            name="color"
+            placeholder="Color"
+            value={formData.color}
+            onChange={handleChange}
+          />
+        </>
+      ) : (
+        <input
+          type="number"
+          name="level"
+          placeholder="Battery %"
+          value={formData.level}
+          onChange={handleChange}
+          min="0"
+          max="100"
+          required
+        />
+      )}
 
-      <button type = "submit" className="button button-primary">Add Vehicle</button>
-
+      <button
+        className="button button-primary"
+        disabled={loading}
+      >
+        {loading ? "Saving..." : "Submit"}
+      </button>
     </form>
   );
- };
+};
 
- export default VehicleForm;
+export default VehicleForm;

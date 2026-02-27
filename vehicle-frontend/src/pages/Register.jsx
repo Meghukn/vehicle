@@ -1,47 +1,98 @@
-import { useState, useContext } from "react";
-import { useNavigate } from "react-router-dom";
-import API from "../services/api";
-import { AuthContext } from "../context/AuthContext";
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import api from "../services/api";
 
-function Register() {
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    password: ""
-  });
-
-  const { login } = useContext(AuthContext);
+const Register = () => {
   const navigate = useNavigate();
 
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
+
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
   const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
 
     try {
-      const { data } = await API.post("/auth/register", form);
+      await api.post("/auth/register", formData);
 
-      login(data);
-      navigate("/dashboard");
-    }catch(error) {
-      alert(error.response?.data?.message || "Error");
+      navigate("/login");
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Registration failed. Please try again."
+      );
     }
+
+    setLoading(false);
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h2>Register</h2>
-      <input name="name" placeholder="Name" onChange={handleChange} />
-      <input name="email" placeholder="Email" onChange={handleChange} />
-      <input name="password" type="password" placeholder="Password" onChange={handleChange} />
-      <button type="submit">Register</button>
-    </form>
-  )
-}
+    <div className="auth-container">
+      <div className="auth-card">
+        <h2>Create Account</h2>
+
+        {error && (
+          <div className="error-box">{error}</div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            name="name"
+            placeholder="Full Name"
+            value={formData.name}
+            onChange={handleChange}
+            required
+          />
+
+          <input
+            type="email"
+            name="email"
+            placeholder="Email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+          />
+
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            value={formData.password}
+            onChange={handleChange}
+            minLength="6"
+            required
+          />
+
+          <button
+            className="button button-primary"
+            disabled={loading}
+          >
+            {loading ? "Creating..." : "Register"}
+          </button>
+        </form>
+
+        <p className="auth-footer">
+          Already have an account?{" "}
+          <Link to="/login">Login</Link>
+        </p>
+      </div>
+    </div>
+  );
+};
 
 export default Register;
