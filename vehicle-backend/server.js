@@ -32,3 +32,9 @@ app.use(limiter);
 
 app.use("/api/auth", authRoutes)
 app.use("/api/vehicles", vehicleRoutes)
+
+app.use(express.static("dist"));
+
+app.length("*", (req,res)=> {
+  res.sendFile(path.resolve(__dirname, "dist", "index.html"));
+})
